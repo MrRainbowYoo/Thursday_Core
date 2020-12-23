@@ -12,25 +12,39 @@
       >
       <i class="el-icon-upload"></i>
       <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-      <div class="el-upload__tip" slot="tip">只能上传jpg/png文件，且不超过2MB</div>
+      <div class="el-upload__tip" slot="tip">若批量检测，请选择文件夹上传</div>
+
     </el-upload>
+
+    <div class="btns">
+      <form name="uploadFilesBox" id="form">
+        <a href="javascript:;" class="input-file input-fileup" >
+          <input ref="file" class="fileUploaderClass" type='file' id="uploadFilesBtn" name="uploadFilesBtn" webkitdirectory style="display: none" @change.stop="uploadFiles"/>
+          <el-button type="primary" onclick="document.uploadFilesBox.uploadFilesBtn.click()">选择文件夹<i class="el-icon-upload el-icon--right"></i></el-button>
+        </a>
+      </form>
+
+      <el-button id="check-btn" type="success" round @click="test" v-loading.fullscreen.lock="fullscreenLoading">检测</el-button>
+
+      <el-button type="warning" round @click="saveFiles" v-if="showSave">下载</el-button>
+
+    </div>
 
     <div class="ID_pic_wrap" style="width: 100%;height: 100%;padding: 0"  v-for="(item,i) in imgs">
       <img :src="item" alt="" v-show="showOld" style="" ref="myImg">
       <canvas :id="forId(i)" width="0" height="0" v-show="!showOld"></canvas>
     </div>
 
-    <a href="javascript:;" class="input-file input-fileup" >
-      <i class="iconfont icon-beike"></i>&nbsp;上传文件夹<input ref="file"  class="fileUploaderClass" type='file' name="file" webkitdirectory style="position: absolute;left: 50%;top: 20px;" @change.stop="uploadFiles"/>
-    </a>
 
-    <input type="button" @click="test" value="检测" v-loading.fullscreen.lock="fullscreenLoading">
+<!--    <input type="button" @click="test" value="检测" v-loading.fullscreen.lock="fullscreenLoading">-->
 
   </div>
 </template>
 
 <script>
   import axios from 'axios'
+  import JSZip from 'jszip'
+  import FileSaver from 'file-saver'
   import index from "../router";
 export default {
   data() {
@@ -38,7 +52,8 @@ export default {
       src1:'',
       showOld: true,
       fullscreenLoading: false,
-      imgs: []
+      imgs: [],
+      showSave: false
     };
   },
   methods: {
@@ -51,6 +66,7 @@ export default {
       this.imgs = []
       this.src1 = ''
       this.showOld = true
+      this.showSave = false
 
       filesList = this.$refs.file.files
       // console.log(filesList)
@@ -84,6 +100,7 @@ export default {
       var reader = new FileReader();
 
       this.showOld = true
+      this.showSave = false
       this.imgs = []
 
       //转base64
@@ -159,6 +176,12 @@ export default {
       var _this = this
       let access_token = '24.df4c811258167f341199b22fe0720186.2592000.1611054910.282335-22834848'
       let url = 'https://aip.baidubce.com/rest/2.0/image-classify/v1/body_attr?access_token='
+
+      if(!this.imgs.length){
+        this.$message.warning('未选择图片')
+      }
+      else
+        this.showSave = true
 
       for(var num = 0;num < this.imgs.length; num++){
         var imgUrl = this.imgs[num];
@@ -240,6 +263,43 @@ export default {
 
       }, 1000);
     },
+    saveFiles(){
+      if(this.imgs.length === 1){
+        var strDataURI = document.getElementById("myCanvas_0").toDataURL("image/png",1);
+        var dlLink = document.createElement('a');
+        dlLink.download = "检测结果";
+        dlLink.href = strDataURI;
+        // dlLink.dataset.downloadurl = [MIME_TYPE, dlLink.download, dlLink.href].join(':');
+        document.body.appendChild(dlLink);
+        dlLink.click();
+        document.body.removeChild(dlLink);
+        return 0;
+        // document.getElementById("download").setAttribute("href",strDataURI);
+      }
+
+
+      var blogTitle = '检测结果'
+      var zip = new JSZip()
+      var imgs = zip.folder(blogTitle)
+      var baseList = []
+      var imgNameList = [];
+
+      for(var i=0;i<this.imgs.length;i++){
+        let id = "myCanvas_"+i.toString()
+        let img_name = 'res_'+i.toString()
+        imgNameList.push(img_name)
+        let url = document.getElementById(id).toDataURL("image/png",1)
+        baseList.push(url.substring(22))
+        if(baseList.length === this.imgs.length && baseList.length>0){
+          for(let j=0;j<baseList.length;j++){
+            imgs.file(imgNameList[j]+'.png',baseList[j],{base64:true})
+          }
+          zip.generateAsync({type:'blob'}).then(function (content){
+            FileSaver.saveAs(content,blogTitle+'.zip')
+          })
+        }
+      }
+    }
   }
 }
 </script>
@@ -247,5 +307,18 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 
+.upload-demo {
+  /*border: 1px solid #2c3e50;*/
+}
 
+.btns {
+  /*border: 1px solid #2c3e50;*/
+}
+#form {
+  margin-top: 10px;
+}
+
+#check-btn {
+  margin: 10px 0;
+}
 </style>
