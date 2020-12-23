@@ -163,6 +163,8 @@ export default {
         }
         _this.showOld = false
         console.log("画完第"+index)
+        if(index == _this.imgs.length-1)
+          _this.$message.success('检测完成')
       });
 
 
