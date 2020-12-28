@@ -87,15 +87,19 @@ export default {
       const isJPG = file.type === 'image/jpeg';
       const isPNG = file.type === 'image/png';
       const isLt2M = file.size / 1024 / 1024 < 2;
-      if (!isJPG && !isPNG) {
-        this.$message.error('图片只能是JPG或PNG格式!');
-      }
-      if (!isLt2M) {
-        this.$message.error('图片大小不能超过 2MB!');
-      }
+      // if (!isJPG && !isPNG) {
+      //   this.$message.error('图片只能是JPG或PNG格式!');
+      // }
+      // if (!isLt2M) {
+      //   this.$message.error('图片大小不能超过 2MB!');
+      // }
       return isJPG && isLt2M;
     },
     onChange(file,fileList) {
+      // if(!this.beforeUpload(file))
+      // {
+      //   return 0
+      // }
       var _this = this;
       var reader = new FileReader();
 
@@ -249,6 +253,7 @@ export default {
           }
           else {
             this.$message.error('识别不到人体');
+            _this.openFullScreen1([],num)
             return 0
           }
         } )
